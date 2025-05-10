@@ -1,0 +1,282 @@
+<script setup>
+import { ref, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth'; // 调整为实际路径
+import { ElMessage } from 'element-plus';
+import { User, Lock, Promotion, View as IconView, Hide as IconHide } from '@element-plus/icons-vue'; // 使用更合适的图标
+
+const authStore = useAuthStore();
+const router = useRouter();
+
+const loginFormRef = ref(null);
+
+const loginForm = reactive({
+  username: '',
+  password: '',
+});
+
+// 表单校验规则 (Element Plus 的方式)
+const loginRules = reactive({
+  username: [
+    { required: true, message: '请输入您的用户名', trigger: 'blur' },
+  ],
+  password: [
+    { required: true, message: '请输入您的密码', trigger: 'blur' },
+  ],
+});
+
+const handleLogin = async () => {
+  if (authStore.loginStatus.error) {
+    authStore.loginStatus.error = null;
+  }
+
+  if (!loginFormRef.value) return;
+  await loginFormRef.value.validate(async (valid) => {
+    if (valid) {
+      const success = await authStore.login({
+        username: loginForm.username,
+        password: loginForm.password,
+      });
+
+      if (!success && authStore.loginStatus.error) {
+        ElMessage({
+            message: authStore.loginStatus.error,
+            type: 'error',
+            showClose: true,
+        });
+      }
+      // 登录成功后的跳转由 authStore 或路由守卫处理
+    } else {
+      ElMessage.error('请输入用户名和密码。');
+      return false;
+    }
+  });
+};
+</script>
+
+<template>
+  <div class="login-page-wrapper-business">
+    <el-card class="login-card-business" shadow="lg"> {/* 使用 Element Plus 的 shadow 属性 */}
+      <div class="login-header">
+        {/* 可以放置一个更商务的 Logo 或系统名称图标 */}
+        <el-icon :size="48" class="header-logo-icon"><Promotion /></el-icon>
+        <h1 class="form-main-title">企业级请假审批系统</h1>
+        <p class="form-welcome-text">欢迎回来，请登录您的账户</p>
+      </div>
+
+      <el-form
+        ref="loginFormRef"
+        :model="loginForm"
+        :rules="loginRules"
+        label-position="top"
+        class="login-form-content-business"
+        @submit.prevent="handleLogin"
+        hide-required-asterisk
+        size="large"
+      >
+        <el-form-item label="账户用户名" prop="username">
+          <el-input
+            v-model="loginForm.username"
+            placeholder="请输入用户名/工号"
+            :prefix-icon="User"
+            clearable
+            autofocus
+          />
+        </el-form-item>
+
+        <el-form-item label="账户密码" prop="password">
+          <el-input
+            type="password"
+            v-model="loginForm.password"
+            placeholder="请输入密码"
+            :prefix-icon="Lock"
+            show-password
+            clearable
+            @keyup.enter="handleLogin"
+          />
+        </el-form-item>
+
+        <el-form-item v-if="authStore.loginStatus.error" class="form-item-alert">
+          <el-alert
+            :title="authStore.loginStatus.error"
+            type="error"
+            show-icon
+            :closable="false"
+            effect="light"
+          />
+        </el-form-item>
+
+        <el-form-item class="login-button-item">
+          <el-button
+            type="primary"
+            native-type="submit"
+            :loading="authStore.loginStatus.isLoading"
+            class="login-submit-button-business"
+            size="large"
+          >
+            {{ authStore.loginStatus.isLoading ? '安全登录中...' : '登 录' }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+
+      <div class="form-footer-options">
+        <el-link type="primary" @click="router.push('/register')" :underline="false">创建新账户</el-link>
+        <el-link type="info" @click="router.push('/forgot-password')" :underline="false" style="margin-left: auto;">忘记密码?</el-link>
+      </div>
+    </el-card>
+     <footer class="page-footer-text">
+      © {{ new Date().getFullYear() }} 企业解决方案. 保留所有权利.
+    </footer>
+  </div>
+</template>
+
+<style scoped>
+/* 确保这些变量与您全局 style.css 中的定义对齐或进行调整 */
+.login-page-wrapper-business {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: var(--bg-secondary); /* 使用全局定义的次级背景色，通常是浅灰 */
+  /* 商务风可以考虑更微妙的背景，如细微纹理或非常淡的颜色叠加 */
+  /* background-image: url('/path/to/subtle-business-background.png'); */
+  font-family: var(--font-family-sans);
+}
+
+.login-card-business {
+  width: 100%;
+  max-width: 440px; /* 控制卡片宽度 */
+  border-radius: var(--border-radius-lg); /* 更大的圆角 */
+  border: 1px solid var(--border-color); /* 清晰的边框 */
+  /* Element Plus 的 shadow="lg" 会提供一个不错的阴影 */
+  /* 如果要自定义阴影，可以使用您的CSS变量 --shadow-lg */
+  /* box-shadow: var(--shadow-lg); */
+  overflow: hidden; /* 确保内部元素不超过圆角 */
+  animation: cardEntry 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes cardEntry {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-header {
+  text-align: center;
+  padding: 2rem 1.5rem 1.5rem; /* 调整头部内边距 */
+  /* background-color: var(--el-color-primary-light-9); /* 非常浅的主题色背景 */
+  /* border-bottom: 1px solid var(--border-color); */
+}
+.header-logo-icon {
+  color: var(--accent-color); /* 使用强调色 */
+  margin-bottom: 0.8rem;
+  /* 可以考虑用一个更商务的品牌logo代替简单图标 */
+}
+.form-main-title {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+  font-size: 1.8rem; /* 调整大小 */
+  font-weight: var(--font-weight-bold); /* 加粗 */
+}
+.form-welcome-text {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.login-form-content-business {
+  padding: 1.5rem 2.5rem 2rem; /* 表单内容的内边距 */
+}
+
+.el-form-item {
+  margin-bottom: 1.75rem; /* 增加表单项间距 */
+}
+
+:deep(.el-form-item__label) { /* 使用 :deep() 穿透 Element Plus 组件样式 */
+  line-height: 1.4 !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.9rem !important;
+  padding-bottom: 0.5rem !important; /* 标签和输入框间距 */
+  font-weight: var(--font-weight-medium) !important;
+}
+
+:deep(.el-input--large .el-input__wrapper) {
+  border-radius: var(--border-radius-md) !important; /* 中等圆角 */
+  box-shadow: none !important; /* 移除Element Plus默认的wrapper阴影 */
+  border: 1px solid var(--border-color); /* 统一边框颜色 */
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  background-color: var(--bg-primary); /* 输入框背景使用主背景色 */
+}
+:deep(.el-input--large .el-input__wrapper:hover) {
+  border-color: var(--accent-color);
+}
+:deep(.el-input--large .el-input__wrapper.is-focus) {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb, 66, 90, 238), 0.2) !important; /* 使用您accent-color的RGB值 */
+}
+:deep(.el-input__inner) { /* 输入框文字颜色 */
+  color: var(--text-primary);
+}
+:deep(.el-input__prefix .el-input__icon) {
+  color: var(--text-muted); /* 前缀图标颜色 */
+}
+
+.form-item-alert .el-alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius-sm);
+}
+
+.login-button-item {
+  margin-top: 2rem; /* 按钮与上方元素的间距 */
+}
+.login-submit-button-business.el-button--large {
+  width: 100%;
+  font-weight: var(--font-weight-semibold); /* 更粗的字重 */
+  letter-spacing: 0.5px;
+  border-radius: var(--border-radius-md); /* 统一圆角 */
+  padding-top: 0.85rem; /* 调整按钮上下内边距 */
+  padding-bottom: 0.85rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.login-submit-button-business.el-button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(var(--accent-color-rgb, 66, 90, 238), 0.3);
+}
+.login-submit-button-business.el-button.is-loading .el-icon { /* 加载图标 */
+  font-size: 1.1em;
+}
+
+.form-footer-options {
+  display: flex;
+  justify-content: space-between; /* 两端对齐 */
+  align-items: center;
+  padding: 1rem 2.5rem 1.5rem; /* 内边距 */
+  border-top: 1px solid var(--border-color); /* 分割线 */
+  margin-top: 1rem; /* 与表单的间距 */
+}
+.form-footer-options .el-link {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+}
+.form-footer-options .el-link.el-link--primary:hover {
+  color: var(--accent-color-hover);
+}
+
+.page-footer-text {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  width: 100%;
+}
+
+/* Spinner (如果按钮内使用自定义的，而非el-button的loading) */
+.spinner {
+  /* 样式与之前类似 */
+}
+</style>

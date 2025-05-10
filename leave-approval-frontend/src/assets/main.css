@@ -1,0 +1,19 @@
+/* src/assets/main.css */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f0f2f5; /* 一个浅灰色背景 */
+  color: #333;
+}
+
+#app {
+  /* 这是 public/index.html 中的根元素 ID */
+  /* 你可以根据需要为 #app 添加样式 */
+}
+
+/* 你可以添加更多全局样式或 CSS Reset */
+* {
+    box-sizing: border-box;
+}
